@@ -1,0 +1,1 @@
+<form class="inline" method="post" action="/admin/moderate">@csrf<input type="hidden" name="type" value="{{ $type }}"><input type="hidden" name="id" value="{{ $id }}">@foreach($values as $value=>$label)<button class="button secondary small" name="value" value="{{ $value }}">{{ $label }}</button>@endforeach</form>
