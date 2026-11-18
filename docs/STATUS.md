@@ -1,6 +1,14 @@
 # Stato della consegna
 
-Ultimo aggiornamento: 17 novembre 2026.
+Ultimo aggiornamento: 18 novembre 2026.
+
+Progetto attuale: `C:/Sviluppo/ea-archive`, ritrovato con i file applicativi. Logo integrato nel layout condiviso su desktop e mobile; viste Blade compilate, nessuna verifica visiva in browser. Vedi [BRAND.md](BRAND.md).
+
+## Pubblicazione
+
+Il 18 novembre 2026 l'utente ha confermato che la versione corrente del sito risulta pubblicata. Conferma ricevuta dall'utente, senza una verifica indipendente del deployment. URL, revisione esatta distribuita e configurazione del server di produzione non sono stati comunicati.
+
+Le verifiche riportate sotto riguardano lo sviluppo locale: la pubblicazione non attesta automaticamente il collaudo di MySQL, SMTP, broker o MetaEditor in produzione. I riferimenti a servizi non configurati descrivono quanto noto nell'ambiente di sviluppo.
 
 ## Verifiche effettuate
 
@@ -18,7 +26,7 @@ Aggiunta la pagina autenticata **Scegli il broker** con immagini, descrizioni e 
 
 Implementati catalogo e dettaglio, ricerca, registrazione/login/logout, verifica email, reset password, profilo, conti in verifica manuale, upload sorgenti e immagine, abilitazione sviluppatori, moderazione, audit, compilazione in coda, download privati e recensioni dopo download.
 
-Il catalogo locale contiene tre schede dimostrative. Non contiene EA reali o metriche finanziarie verificate. Nessun amministratore con password predefinita. Nessuna pubblicazione Internet.
+Il catalogo locale contiene tre schede dimostrative. Non contiene EA reali o metriche finanziarie verificate. Nessun amministratore con password predefinita. Pubblicazione confermata dall'utente il 18 novembre 2026, non verificata direttamente.
 
 Non collaudati: SMTP, account broker reali, compilazione MetaEditor/EX5 e isolamento OS del worker. Nessun collegamento API broker finché non viene scelto il partner. Il server ha ora PHP CLI e Composer in C:/tools/php, ma IIS/FastCGI non è stato configurato.
 

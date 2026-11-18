@@ -15,6 +15,8 @@ La documentazione dello sviluppo si trova in [docs/README.md](docs/README.md), c
 
 ## Avvio su questo ambiente
 
+Cartella del progetto: `C:/Sviluppo/ea-archive`. Eseguire i comandi da questa directory.
+
 Le dipendenze e il database locale sono gi? inizializzati.
 
 ```powershell

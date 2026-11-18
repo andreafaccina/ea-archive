@@ -1,12 +1,18 @@
 # Avvio e produzione
 
-Ultimo aggiornamento: 17 novembre 2026.
+Ultimo aggiornamento: 18 novembre 2026.
+
+## Stato pubblicazione
+
+Il 18 novembre 2026 l'utente ha confermato la pubblicazione della versione corrente. Nessun deployment eseguito o verificato dall'assistente in questa occasione; URL e configurazione effettiva non comunicati. Le istruzioni seguenti restano la guida per installazioni e aggiornamenti e non certificano quali passaggi siano stati eseguiti in produzione.
 
 ## Locale su questo server
 
+Cartella di sviluppo attuale: `C:/Sviluppo/ea-archive`; eseguire i comandi da questa directory. In produzione usare la sottocartella `public` del deployment effettivo.
+
 Questo server è dedicato allo sviluppo. Il database MySQL previsto risiederà su un server esterno ancora da configurare; non è richiesta l'installazione di MySQL su questa macchina. Le impostazioni di produzione vanno mantenute separate da quelle locali.
 
-Installati PHP CLI in `C:/tools/php` e dipendenze Composer. PHP non è stato aggiunto al PATH globale. L'applicazione non è stata pubblicata su Internet e IIS non è stato riconfigurato.
+Installati PHP CLI in `C:/tools/php` e dipendenze Composer. PHP non è stato aggiunto al PATH globale. L'assistente non ha effettuato la pubblicazione o riconfigurato IIS; la pubblicazione esterna risulta confermata dall'utente il 18 novembre 2026.
 
 ```powershell
 C:/tools/php/php.exe C:/tools/php/composer.phar install
@@ -31,7 +37,7 @@ Il comando richiede che l'utente esista già. Non registra password in shell.
 
 ## Configurazione richiesta per rilascio pubblico
 
-- IIS sito con physical path **solo `C:/inetpub/wwwroot/ea-archive/public`**, HTTPS, URL Rewrite e FastCGI PHP. Non esporre la root del repository. Il web.config nella root ne blocca l'accesso HTTP accidentale.
+- IIS sito con physical path **solo `C:/Sviluppo/ea-archive/public`**, HTTPS, URL Rewrite e FastCGI PHP. Non esporre la root del repository. Il web.config nella root ne blocca l'accesso HTTP accidentale.
 - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://dominio`, `SESSION_SECURE_COOKIE=true`, `SESSION_ENCRYPT=true`. Conservare APP_KEY e segreti in secret store. Permessi scrittura solo storage/bootstrap/cache.
 - MySQL con InnoDB e driver PHP `pdo_mysql`, charset `utf8mb4`, backup cifrati e prove restore. Il driver è abilitato nel PHP CLI di questo server; verificare separatamente PHP FastCGI e worker. SQLite resta per i test in memoria e temporaneamente per l'ambiente locale esistente. Vedi [DATABASE.md](DATABASE.md).
 - Per immagini broker fino a 4 MB, configurare PHP `upload_max_filesize` almeno `4M` e `post_max_size` almeno `8M`, con limite IIS coerente. I limiti effettivi dipendono dalla configurazione FastCGI usata in produzione.

@@ -1,8 +1,22 @@
 # Registro sviluppo EA Archive
 
-Ultimo aggiornamento: 17 novembre 2026.
+Ultimo aggiornamento: 18 novembre 2026.
 
 Questo registro riguarda l'applicazione EA Archive. Il CHANGELOG.md nella root proviene dallo scheletro Laravel e non è il registro dello sviluppo dell'applicazione.
+
+## 18 novembre 2026 - Pubblicazione confermata
+
+- L'utente ha comunicato che questa versione del sito risulta pubblicata.
+- Aggiornati stato, indice e guida di deployment distinguendo la conferma ricevuta dai controlli locali.
+- URL, revisione distribuita e configurazione effettiva di produzione non comunicati; nessuna verifica remota o nuova pubblicazione eseguita.
+- Modifica solo documentale: test applicativi non rieseguiti.
+
+## 17 novembre 2026 - Nuovo percorso progetto e integrazione logo
+
+- Confermato il progetto spostato in `C:/Sviluppo/ea-archive`; aggiornati i percorsi documentati.
+- Integrato il logo PNG esistente nel layout condiviso: sidebar desktop e intestazione mobile, link alla home e testo alternativo.
+- Aggiunte regole CSS responsive senza modificare il file immagine; aggiornati BRAND.md, indice e stato.
+- Verifica: viste Blade compilate. Nessun test aggiunto per la modifica di layout; verifica visiva in browser non eseguita.
 
 ## 17 novembre 2026 — Separazione ambiente di sviluppo e MySQL esterno
 

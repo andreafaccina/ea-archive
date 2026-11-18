@@ -1,6 +1,6 @@
 # Documentazione EA Archive
 
-Ultimo aggiornamento: 17 novembre 2026.
+Ultimo aggiornamento: 18 novembre 2026.
 
 Questa cartella raccoglie la documentazione dello sviluppo del progetto.
 
@@ -12,6 +12,8 @@ Questa cartella raccoglie la documentazione dello sviluppo del progetto.
 | [CHANGELOG.md](CHANGELOG.md) | Registro cronologico delle modifiche al progetto |
 | [BROKERS.md](BROKERS.md) | Pagina broker, gestione amministrativa, immagini e link affiliati |
 | [DATABASE.md](DATABASE.md) | Configurazione MySQL, inizializzazione e separazione dei database di test |
+
+| [BRAND.md](BRAND.md) | Logo del sito e integrazione responsive |
 
 ## Regola di aggiornamento
 
