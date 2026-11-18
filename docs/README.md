@@ -15,6 +15,9 @@ Questa cartella raccoglie la documentazione dello sviluppo del progetto.
 
 | [BRAND.md](BRAND.md) | Logo del sito e integrazione responsive |
 
+| [LOCALIZATION.md](LOCALIZATION.md) | Italiano/inglese, selettore e traduzioni Laravel |
+| [EXTERNAL_SERVICES.md](EXTERNAL_SERVICES.md) | Servizio Windows, protocollo API, storage S3 e aggiornamento |
+
 ## Regola di aggiornamento
 
 La documentazione va aggiornata insieme a ogni modifica significativa al progetto, nello stesso intervento sul codice:

@@ -16,7 +16,7 @@ class IdentityController extends Controller
     {
         $r->fulfill();
 
-        return redirect('/account')->with('success', 'Email verificata.');
+        return redirect('/account')->with('success', __('Email verificata.'));
     }
 
     public function resend(Request $r)
@@ -25,7 +25,7 @@ class IdentityController extends Controller
             $r->user()->sendEmailVerificationNotification();
         }
 
-        return back()->with('success', 'Link di verifica inviato.');
+        return back()->with('success', __('Link di verifica inviato.'));
     }
 
     public function forgot(Request $r)
@@ -33,7 +33,7 @@ class IdentityController extends Controller
         $r->validate(['email' => 'required|email']);
         Password::sendResetLink($r->only('email'));
 
-        return back()->with('success', 'Se l’account esiste, riceverai un link per reimpostare la password.');
+        return back()->with('success', __('Se l’account esiste, riceverai un link per reimpostare la password.'));
     }
 
     public function reset(Request $r)
@@ -44,6 +44,6 @@ class IdentityController extends Controller
             event(new PasswordReset($u));
         });
 
-        return $status === Password::PASSWORD_RESET ? redirect('/login')->with('success', 'Password aggiornata.') : back()->withErrors(['email' => 'Link non valido o scaduto.']);
+        return $status === Password::PASSWORD_RESET ? redirect('/login')->with('success', __('Password aggiornata.')) : back()->withErrors(['email' => __('Link non valido o scaduto.')]);
     }
 }

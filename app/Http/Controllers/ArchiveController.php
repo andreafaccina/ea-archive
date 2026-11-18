@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\CompileExpert;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -37,6 +36,7 @@ class ArchiveController extends Controller
     {
         $d = $r->validate(['name' => 'required|string|max:100', 'email' => 'required|email|max:255|unique:users', 'password' => ['required', 'confirmed', Password::min(12)]]);
         $u = User::create($d);
+        $u->forceFill(['locale' => app()->getLocale()])->save();
         event(new Registered($u));
         Auth::login($u);
         $r->session()->regenerate();
@@ -48,7 +48,7 @@ class ArchiveController extends Controller
     {
         $d = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
         if (! Auth::attempt($d)) {
-            return back()->withErrors(['email' => 'Credenziali non valide.']);
+            return back()->withErrors(['email' => __('Credenziali non valide.')]);
         }
         $r->session()->regenerate();
 
@@ -76,7 +76,7 @@ class ArchiveController extends Controller
     {
         $r->user()->update($r->validate(['name' => 'required|string|max:100']));
 
-        return back()->with('success', 'Profilo aggiornato.');
+        return back()->with('success', __('Profilo aggiornato.'));
     }
 
     public function broker(Request $r)
@@ -84,11 +84,11 @@ class ArchiveController extends Controller
         $d = $r->validate(['login' => ['required', 'regex:/^[1-9][0-9]{0,17}$/'], 'server' => 'required|string|max:120']);
         DB::transaction(function () use ($r, $d) {
             DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
-            abort_if(DB::table('broker_accounts')->where('login', $d['login'])->where('server', $d['server'])->exists(), 422, 'Conto già presente.');
+            abort_if(DB::table('broker_accounts')->where('login', $d['login'])->where('server', $d['server'])->exists(), 422, __('Conto già presente.'));
             DB::table('broker_accounts')->insert($d + ['user_id' => $r->user()->id, 'created_at' => now(), 'updated_at' => now()]);
         });
 
-        return back()->with('success', 'Conto inviato per la verifica.');
+        return back()->with('success', __('Conto inviato per la verifica.'));
     }
 
     public function build(Request $r, int $id)
@@ -98,22 +98,21 @@ class ArchiveController extends Controller
             DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
             DB::table('experts')->where('id', $id)->where('status', 'published')->firstOrFail();
             DB::table('broker_accounts')->where('id', $d['broker_account_id'])->where('user_id', $r->user()->id)->where('status', 'verified')->firstOrFail();
-            abort_if(DB::table('builds')->where('user_id', $r->user()->id)->whereIn('status', ['queued', 'compiling'])->exists(), 422, 'Hai già una compilazione in corso.');
+            abort_if(DB::table('builds')->where('user_id', $r->user()->id)->whereIn('status', ['queued', 'compiling'])->exists(), 422, __('Hai già una compilazione in corso.'));
             $bid = DB::table('builds')->insertGetId(['user_id' => $r->user()->id, 'expert_id' => $id, 'broker_account_id' => $d['broker_account_id'], 'created_at' => now(), 'updated_at' => now()]);
-            CompileExpert::dispatch($bid)->onQueue('compilers')->afterCommit();
         });
 
-        return redirect('/account')->with('success', 'Compilazione richiesta.');
+        return redirect('/account')->with('success', __('Compilazione richiesta.'));
     }
 
     public function download(Request $r, int $id)
     {
         $b = DB::table('builds')->where('id', $id)->where('user_id', $r->user()->id)->where('status', 'ready')->firstOrFail();
         DB::table('broker_accounts')->where('id', $b->broker_account_id)->where('status', 'verified')->firstOrFail();
-        abort_unless(Storage::disk('local')->exists($b->artifact_path), 404);
+        abort_unless(Storage::disk($b->artifact_disk)->exists($b->artifact_path), 404);
         DB::table('builds')->where('id', $id)->update(['downloaded_at' => now()]);
 
-        return Storage::disk('local')->download($b->artifact_path, 'expert-'.$id.'.ex5', ['Cache-Control' => 'private, no-store']);
+        return Storage::disk($b->artifact_disk)->download($b->artifact_path, 'expert-'.$id.'.ex5', ['Cache-Control' => 'private, no-store', 'Content-Type' => 'application/octet-stream']);
     }
 
     public function review(Request $r, int $id)
@@ -123,7 +122,7 @@ class ArchiveController extends Controller
         $d = $r->validate(['rating' => 'required|integer|between:1,5', 'body' => 'required|string|min:10|max:2000']);
         DB::table('reviews')->updateOrInsert(['user_id' => $r->user()->id, 'expert_id' => $id], $d + ['created_at' => now(), 'updated_at' => now()]);
 
-        return back()->with('success', 'Recensione salvata.');
+        return back()->with('success', __('Recensione salvata.'));
     }
 
     public function developer(Request $r)
@@ -138,13 +137,16 @@ class ArchiveController extends Controller
     {
         abort_unless(in_array($r->user()->role, ['developer', 'admin']), 403);
         $d = $r->validate(['name' => 'required|string|max:120', 'description' => 'required|string|min:30|max:10000', 'strategy' => 'required|string|max:100', 'symbols' => 'required|string|max:100', 'timeframe' => 'required|string|max:30', 'risk' => 'required|in:Basso,Medio,Alto', 'version' => 'required|string|max:30', 'source' => 'required|file|max:2048', 'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096']);
-        abort_unless(strtolower($r->file('source')->getClientOriginalExtension()) === 'mq5', 422, 'Carica un sorgente MQ5.');
+        abort_unless(strtolower($r->file('source')->getClientOriginalExtension()) === 'mq5', 422, __('Carica un sorgente MQ5.'));
         unset($d['source'],$d['image']);
-        $d['source_path'] = $r->file('source')->store('sources', 'local');
+        $d['source_disk'] = config('archive.files_disk');
+        $d['source_sha256'] = hash_file('sha256', $r->file('source')->getRealPath());
+        $d['source_path'] = $r->file('source')->store('sources', $d['source_disk']);
+        abort_unless(is_string($d['source_path']), 503);
         $d['image_path'] = $r->file('image')?->store('images', 'local');
         DB::table('experts')->insert($d + ['user_id' => $r->user()->id, 'created_at' => now(), 'updated_at' => now()]);
 
-        return back()->with('success', 'EA ricevuto: in attesa di revisione.');
+        return back()->with('success', __('EA ricevuto: in attesa di revisione.'));
     }
 
     public function image(int $id)
@@ -167,7 +169,7 @@ class ArchiveController extends Controller
         abort_unless($r->user()->role === 'admin', 403);
         $e = DB::table('experts')->where('id', $id)->firstOrFail();
 
-        return Storage::disk('local')->download($e->source_path, 'review-'.$id.'.mq5');
+        return Storage::disk($e->source_disk)->download($e->source_path, 'review-'.$id.'.mq5', ['Content-Type' => 'application/octet-stream', 'Cache-Control' => 'private, no-store']);
     }
 
     public function moderate(Request $r)
@@ -189,6 +191,6 @@ class ArchiveController extends Controller
             DB::table('audit_logs')->insert(['user_id' => $r->user()->id, 'action' => $d['value'], 'subject' => $table.':'.$d['id'], 'created_at' => now(), 'updated_at' => now()]);
         });
 
-        return back()->with('success', 'Operazione registrata.');
+        return back()->with('success', __('Operazione registrata.'));
     }
 }

@@ -13,6 +13,8 @@ La documentazione dello sviluppo si trova in [docs/README.md](docs/README.md), c
 - [Pagina broker e gestione link affiliati](docs/BROKERS.md)
 - [Configurazione MySQL](docs/DATABASE.md)
 
+Miglioramenti locali successivi alla pubblicazione: interfaccia italiano/inglese, compilatore come servizio Windows esterno e storage privato S3 per MQ5/EX5. Guide: [Localizzazione](docs/LOCALIZATION.md) e [Servizi esterni](docs/EXTERNAL_SERVICES.md). Queste modifiche richiedono migrazione e configurazione prima del rilascio.
+
 ## Avvio su questo ambiente
 
 Cartella del progetto: `C:/Sviluppo/ea-archive`. Eseguire i comandi da questa directory.

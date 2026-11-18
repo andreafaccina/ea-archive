@@ -1,0 +1,15 @@
+<service>
+  <id>EAArchiveCompiler</id>
+  <name>EA Archive Compiler</name>
+  <description>Outbound HTTPS agent for reviewed MetaTrader 5 builds.</description>
+  <executable>C:\Python313\python.exe</executable>
+  <arguments>"C:\EACompiler\worker.py"</arguments>
+  <workingdirectory>C:\EACompiler</workingdirectory>
+  <!-- Set credentials in the dedicated service account environment, not in this file. -->
+  <env name="EA_API_URL" value="https://ea-archive.example" />
+  <env name="METAEDITOR_PATH" value="C:\Program Files\MetaTrader 5\metaeditor64.exe" />
+  <env name="EA_WORK_DIRECTORY" value="C:\EACompiler\work" />
+  <log mode="roll" />
+  <onfailure action="restart" delay="10 sec" />
+  <stoptimeout>180 sec</stoptimeout>
+</service>

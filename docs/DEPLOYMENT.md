@@ -42,18 +42,18 @@ Il comando richiede che l'utente esista già. Non registra password in shell.
 - MySQL con InnoDB e driver PHP `pdo_mysql`, charset `utf8mb4`, backup cifrati e prove restore. Il driver è abilitato nel PHP CLI di questo server; verificare separatamente PHP FastCGI e worker. SQLite resta per i test in memoria e temporaneamente per l'ambiente locale esistente. Vedi [DATABASE.md](DATABASE.md).
 - Per immagini broker fino a 4 MB, configurare PHP `upload_max_filesize` almeno `4M` e `post_max_size` almeno `8M`, con limite IIS coerente. I limiti effettivi dipendono dalla configurazione FastCGI usata in produzione.
 - Configurare i broker e i link affiliati HTTPS da **Amministrazione → Gestisci broker**; `BROKER_REGISTRATION_URL` non è più usato dalla UI. Applicare la migrazione `create_brokers_table` durante il rilascio. La verifica manuale richiede una procedura con prove esterne; API broker non implementata finché non viene scelto il fornitore. Vedi [BROKERS.md](BROKERS.md).
-- Configurare `METAEDITOR_PATH` solo sul worker Windows isolato. Sorgenti e artefatti su storage privato condiviso col web. Vietare l'accesso HTTP diretto.
-- `DB_QUEUE_RETRY_AFTER=210`, timeout job 150s, processo MetaEditor 120s. Avviare il worker con servizio supervisionato usando una identità dedicata:
-
-```powershell
-C:/tools/php/php.exe artisan queue:work --queue=compilers --timeout=150 --tries=1
-```
-
-- Restart worker dopo ogni deploy, niente task lanciati a mano da IIS. Worker isolati e non privilegiati; testare che processi figli non restino vivi dopo timeout. Non eseguire MQ5 sul server web.
+- Per compilazione e file EA configurare il servizio Windows separato e S3 privato secondo [EXTERNAL_SERVICES.md](EXTERNAL_SERVICES.md). Il sito non esegue più MetaEditor e non invia nuovi lavori alla coda Laravel compilers. Fermare il vecchio worker prima del cambio versione.
+- Impostare `EA_FILESYSTEM_DISK=s3`, parametri AWS/S3 e token servizio; installare separatamente l'agente Windows. Il token non va condiviso con gli utenti. Non occorrono credenziali DB o S3 sul servizio.
+- Per il cambio dalla versione pubblicata: backup, manutenzione, dipendenze, migrazione schema, configurazione S3 e collaudo del servizio, ricostruzione cache, riapertura. Non sono presenti file EA pregressi da recuperare: configurare direttamente il bucket privato, senza eseguire il comando di copia.
+- Configurare PHP `upload_max_filesize` almeno `16M`, `post_max_size` almeno `20M` e limite proxy/IIS coerente per ricevere i compilati fino a 16 MB.
 - `composer install --no-dev --optimize-autoloader`, `php artisan migrate --force`, `php artisan optimize`, smoke test e rollback applicativo con backup DB.
-- Configurare logging centralizzato, allarmi coda/failure e cleanup degli artefatti secondo una policy definita. Il job elimina i propri file temporanei; cancellare i residui dei crash con un job operativo supervisionato.
+- Configurare logging centralizzato, allarmi coda/failure e cleanup degli artefatti secondo una policy definita. Il servizio Windows elimina i propri file temporanei; cancellare i residui dei crash con un job operativo supervisionato.
 - Verifica email e recupero password sono implementati; collegamento conto, upload, build e recensioni richiedono email verificata. Configurare SMTP prima di abilitarli al pubblico: in locale il mailer scrive i link nei log privati.
 - Prima del lancio: collaudo SMTP, termini/privacy, procedura supporto/revoca e cancellazione dati, revisione sicurezza, verifica compatibilità MetaEditor con un vero EA e conto demo. Questi passaggi non sono attestati dal test suite locale.
+
+## Localizzazione
+
+Configurare `APP_LOCALE=it` e `APP_FALLBACK_LOCALE=en`; il selettore supporta italiano e inglese. Le preferenze utente richiedono la nuova migrazione. Vedi [LOCALIZATION.md](LOCALIZATION.md).
 
 ## Verifiche
 
@@ -65,4 +65,4 @@ C:/tools/php/php.exe artisan route:list
 C:/tools/php/php.exe artisan view:cache
 ```
 
-Non è disponibile MetaEditor in questo ambiente: l'integrazione reale di compilazione deve essere collaudata su host Windows isolato. Il job fallisce esplicitamente senza compilatore: non produce download fittizi.
+Non è disponibile MetaEditor in questo ambiente: l'integrazione reale di compilazione deve essere collaudata su host Windows isolato. Senza servizio esterno disponibile i lavori rimangono in coda; non vengono prodotti download fittizi.

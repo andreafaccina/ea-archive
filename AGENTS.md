@@ -1,5 +1,7 @@
 # Documentazione del progetto
 
+Dal 18 novembre 2026, interfaccia IT/EN tramite localizzazione nativa Laravel. Compilazione esclusivamente nel servizio esterno Windows via API HTTPS; non ripristinare esecuzione MetaEditor sul web server. Sorgenti e artefatti supportano storage S3 privato e conservano il disco per record; l'utente ha confermato che non esistono file EA locali pregressi da recuperare. Non prevedere una copia obbligatoria dei file nel rilascio corrente. Leggere docs/LOCALIZATION.md e docs/EXTERNAL_SERVICES.md per configurazione e aggiornamenti.
+
 Questa macchina è usata solo per sviluppo. MySQL sarà su un server esterno ancora da configurare, come confermato dall'utente. Non installare un servizio MySQL locale e mantenere separati configurazioni e dati di sviluppo e produzione.
 
 Database applicativo scelto dall'utente: MySQL, con InnoDB e utf8mb4. Consultare `docs/DATABASE.md`. Non sostituire questa scelta con PostgreSQL o SQLite; SQLite in memoria rimane ammesso per i test, e il database locale preesistente resta temporaneo finché non viene configurata l'istanza MySQL.

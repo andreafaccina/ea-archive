@@ -4,6 +4,23 @@ Ultimo aggiornamento: 18 novembre 2026.
 
 Questo registro riguarda l'applicazione EA Archive. Il CHANGELOG.md nella root proviene dallo scheletro Laravel e non è il registro dello sviluppo dell'applicazione.
 
+## 18 novembre 2026 - Nessun file EA pregresso da recuperare
+
+- Ricevuta conferma dell'utente: non sono presenti sorgenti o compilati locali pregressi da trasferire.
+- Semplificata la procedura di rilascio: configurazione diretta del bucket S3 privato vuoto; nessuna copia di file EA richiesta.
+- Il comando di copia rimane opzionale per eventuali usi futuri. Nessuna cancellazione di dati, modifica al codice o operazione di storage effettuata.
+- Aggiornati stato, architettura, deployment, guida servizi e istruzioni del progetto. Test non rieseguiti per modifica solo documentale.
+
+## 18 novembre 2026 - Localizzazione e servizi esterni (sviluppo, non pubblicato)
+
+- Implementati italiano e inglese tramite file Laravel lang/, helper __(), middleware di locale, selettore con CSRF, preferenza in sessione e users.locale, notifiche con HasLocalePreference. Contenuti degli autori mantenuti nella lingua originale.
+- Sostituita la compilazione locale con API HTTPS per agente Windows esterno: prelievo transazionale, token globale e token per lavoro, scadenza 600 secondi, massimo tre tentativi, controllo dei permessi e completamento idempotente.
+- Creato agente Python standard-library con template WinSW, wrapper login/server, verifica checksum, timeout MetaEditor, controllo log e cleanup. Nessun servizio installato su questa macchina.
+- Aggiunti adapter S3, dischi/checksum per record e comando di copia verificata senza cancellazione degli originali. Immagini EA/broker non migrate. La vecchia classe job resta per compatibilità senza eseguire compilazioni locali.
+- Applicata la nuova migrazione solo al database locale e documentata la procedura di aggiornamento della versione pubblicata, incluso lo spegnimento del vecchio worker.
+- Verifiche: 48 test Laravel e 252 asserzioni; 5 test Python; viste compilate, route API verificate, Pint e audit Composer superati.
+- Non collaudati bucket S3, MetaEditor reale, installazione WinSW, SMTP, MySQL remoto e resa visiva in browser. Nessun rilascio pubblico di queste modifiche.
+
 ## 18 novembre 2026 - Pubblicazione confermata
 
 - L'utente ha comunicato che questa versione del sito risulta pubblicata.

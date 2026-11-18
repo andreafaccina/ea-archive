@@ -4,6 +4,14 @@ Ultimo aggiornamento: 18 novembre 2026.
 
 Progetto attuale: `C:/Sviluppo/ea-archive`, ritrovato con i file applicativi. Logo integrato nel layout condiviso su desktop e mobile; viste Blade compilate, nessuna verifica visiva in browser. Vedi [BRAND.md](BRAND.md).
 
+Il 18 novembre 2026 l'utente ha confermato che non sono presenti file sorgenti o compilati locali pregressi da recuperare. Per il rilascio si configura direttamente S3; nessuna migrazione di file EA richiesta.
+
+## Miglioramenti successivi alla pubblicazione
+
+Implementati localmente italiano/inglese con localizzazione Laravel e servizio compilazione esterno Windows con API autenticata, assegnazioni scadenti e controllo checksum. Aggiunto storage EA compatibile S3 con disco per record e comando di copia verificata dei file storici. Il sito non esegue più MetaEditor. Descrizioni EA/broker e recensioni restano nella lingua dell'autore; immagini restano sul disco esistente.
+
+Questi miglioramenti non sono stati pubblicati, né collegati a S3, WinSW o MetaEditor reali. La conferma di pubblicazione sotto riguarda la versione precedente. Guide: [LOCALIZATION.md](LOCALIZATION.md) e [EXTERNAL_SERVICES.md](EXTERNAL_SERVICES.md).
+
 ## Pubblicazione
 
 Il 18 novembre 2026 l'utente ha confermato che la versione corrente del sito risulta pubblicata. Conferma ricevuta dall'utente, senza una verifica indipendente del deployment. URL, revisione esatta distribuita e configurazione del server di produzione non sono stati comunicati.
@@ -11,6 +19,8 @@ Il 18 novembre 2026 l'utente ha confermato che la versione corrente del sito ris
 Le verifiche riportate sotto riguardano lo sviluppo locale: la pubblicazione non attesta automaticamente il collaudo di MySQL, SMTP, broker o MetaEditor in produzione. I riferimenti a servizi non configurati descrivono quanto noto nell'ambiente di sviluppo.
 
 ## Verifiche effettuate
+
+Miglioramenti del 18 novembre: 48 test Laravel superati con 252 asserzioni e 5 test Python superati. Inclusi selettore lingua, persistenza, rendering inglese, API compilatore, token/lease, checksum, download da disco esterno simulato, copia storage e invocazione MetaEditor simulata. Migrazione applicata solo localmente, viste compilate e Pint verificato; audit Composer senza avvisi. Non sono test di integrazione con S3/MetaEditor/MySQL reali.
 
 Dopo l'aggiunta della gestione broker: 30 test superati con 140 asserzioni, inclusi 17 test dedicati ai broker. Migrazione applicata localmente, viste Blade compilate, otto nuove route elencate e Composer audit senza avvisi. Verifica visiva in browser non effettuata.
 

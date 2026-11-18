@@ -3,7 +3,20 @@
 use App\Http\Controllers\ArchiveController as A;
 use App\Http\Controllers\BrokerController;
 use App\Http\Controllers\IdentityController as I;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
+
+Route::post('/language', function (Request $request) {
+    $data = $request->validate(['locale' => ['required', Rule::in(array_keys(config('archive.locales')))]]);
+    $request->session()->put('locale', $data['locale']);
+    if ($request->user()) {
+        $request->user()->forceFill(['locale' => $data['locale']])->save();
+    }
+    $path = parse_url(url()->previous(), PHP_URL_PATH) ?: '/';
+
+    return redirect(str_starts_with($path, '/') && ! str_starts_with($path, '//') ? $path : '/');
+})->middleware('throttle:30,1')->name('language.update');
 
 Route::middleware('guest')->group(function () {
     Route::view('/forgot-password', 'password', ['mode' => 'forgot'])->name('password.request');

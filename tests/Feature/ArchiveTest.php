@@ -85,7 +85,8 @@ class ArchiveTest extends TestCase
         $id = $this->expert($u);
         $a = $this->account($u);
         $this->actingAs($u)->post('/experts/'.$id.'/builds', ['broker_account_id' => $a])->assertRedirect('/account');
-        Queue::assertPushed(CompileExpert::class);
+        Queue::assertNothingPushed();
+        $this->assertDatabaseHas('builds', ['user_id' => $u->id, 'status' => 'queued']);
         $this->post('/experts/'.$id.'/builds', ['broker_account_id' => $a])->assertStatus(422);
         $this->assertDatabaseCount('builds', 1);
     }
@@ -117,7 +118,7 @@ class ArchiveTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['user_id' => $a->id, 'subject' => 'users:'.$u->id]);
     }
 
-    public function test_missing_compiler_fails_without_fabricated_artifact(): void
+    public function test_legacy_job_leaves_build_queued_for_external_compiler(): void
     {
         Storage::fake('local');
         $u = User::factory()->create();
@@ -126,7 +127,7 @@ class ArchiveTest extends TestCase
         $bid = DB::table('builds')->insertGetId(['user_id' => $u->id, 'expert_id' => $eid, 'broker_account_id' => $aid, 'created_at' => now(), 'updated_at' => now()]);
         config(['archive.compiler' => null]);
         (new CompileExpert($bid))->handle();
-        $this->assertDatabaseHas('builds', ['id' => $bid, 'status' => 'failed', 'artifact_path' => null]);
+        $this->assertDatabaseHas('builds', ['id' => $bid, 'status' => 'queued', 'artifact_path' => null]);
     }
 
     public function test_workspace_pages_render_for_authorized_roles(): void

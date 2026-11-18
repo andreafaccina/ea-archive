@@ -1,6 +1,6 @@
 # EA Archive — architettura MVP
 
-Ultimo aggiornamento: 17 novembre 2026.
+Ultimo aggiornamento: 18 novembre 2026.
 
 ## Ambito e decisioni
 
@@ -15,31 +15,36 @@ flowchart LR
  B[Browser] --> W[IIS HTTPS / public]
  W --> L[Laravel 13: sessioni, autorizzazioni, catalogo]
  L --> D[(MySQL)]
- L --> Q[(Coda database / Redis)]
- L --> S[(Storage privato)]
- Q --> C[Worker compilatore Windows isolato]
+ L --> Q[(MySQL: builds e lease)]
+ L --> S[(S3 privato per MQ5/EX5)]
+ C[Servizio Windows isolato] -->|prelievo e risultato HTTPS| L
  C --> M[MetaEditor MT5]
- C --> S
  A[Admin] --> L
  P[Broker partner] -. verifica manuale ora / API futura .-> L
 ```
 
 Monolite modulare, rendering server Blade e CSS senza toolchain frontend. Riduce costo operativo iniziale. Web stateless rispetto a file locali nella topologia distribuita: sessioni/cache su Redis, dati MySQL, file su storage condiviso privato. Il worker può essere spostato su host dedicati senza cambiare i flussi web. Non è una garanzia di supportare milioni di utenti senza misure, load test e adeguata infrastruttura.
 
-Il prototipo locale usa SQLite e coda database; produzione iniziale: MySQL, backup e storage privato condiviso. Nessun compilatore sul processo web. Non avviare il worker nella stessa identità privilegiata di IIS. Al momento il job usa il disco `local`: distribuendo più host, questo deve diventare un volume privato condiviso oppure un adapter object storage con download/upload temporanei sul worker.
+Lo sviluppo locale usa SQLite, la produzione MySQL. La compilazione usa il servizio Windows esterno con polling HTTPS e assegnazioni transazionali nella tabella builds; non usa più la coda compilers di Laravel. Nuovi sorgenti e compilati possono risiedere su S3 privato; il disco è memorizzato per ogni record. Il servizio Windows non accede a MySQL o S3 direttamente. Immagini e altri file conservano il comportamento precedente. Vedi [EXTERNAL_SERVICES.md](EXTERNAL_SERVICES.md).
+
+## Localizzazione e storage
+
+Interfaccia italiano/inglese con helper Laravel, file JSON e PHP in lang/, lingua in sessione e users.locale, middleware SetLocale e selettore nel layout. Contenuti degli autori non tradotti automaticamente. Vedi [LOCALIZATION.md](LOCALIZATION.md).
+
+La migrazione del 18 novembre aggiunge a experts disco/checksum sorgente e a builds disco/checksum artefatto, snapshot del sorgente, hash del token di assegnazione, scadenza e tentativi. L'utente ha confermato che non ci sono file EA pregressi da recuperare: il rilascio parte direttamente con S3. Il comando archive:copy-ea-storage resta opzionale per eventuali trasferimenti futuri; non va eseguito per questo passaggio.
 
 ## Schema database
 
 | Tabella | Contenuto e vincoli |
 |---|---|
-| users | nome, email univoca, password hash, ruolo user/developer/admin |
+| users | nome, email univoca, password hash, ruolo user/developer/admin, locale nullable it/en |
 | brokers | nome, descrizione, URL affiliato HTTPS, immagine privata, stato attivo e ordine; indice is_active+sort_order+id |
 | broker_accounts | utente FK, login come stringa, server, stato pending/verified/rejected, verificatore FK; unico login+server |
 | experts | autore FK, metadati strategia, versione, rischio dichiarato, percorsi privati sorgente/immagine; stato pending/published/rejected |
 | builds | utente+EA+conto FK, queued/compiling/ready/failed, artefatto privato, errore generico, downloaded_at |
 | reviews | utente+EA FK, voto 1–5, testo; unico utente+EA |
 | audit_logs | amministratore FK, azione, soggetto, timestamp |
-| jobs, failed_jobs | coda persistente e fallimenti del framework |
+| jobs, failed_jobs | tabelle del framework; non usate dai nuovi lavori di compilazione |
 | sessions, cache | stato condivisibile del framework |
 
 Indici sullo stato catalogo e compilazioni, user+data compilazioni e vincoli univoci. Le transizioni amministrative sono transazionali e registrate. La richiesta build blocca la riga utente per evitare più compilazioni attive simultanee. Versioni EA immutabili: per ora ogni aggiornamento è una nuova pubblicazione. In futuro separare experts da expert_versions e registrare digest sorgente e compiler build.
@@ -51,6 +56,7 @@ L'MVP usa endpoint web con sessione e CSRF, non una API pubblica bearer-token. P
 | Metodo | Endpoint | Accesso / comportamento |
 |---|---|---|
 | GET | / | pubblico, catalogo paginato, ricerca `q` |
+| POST | /language | sessione/CSRF, cambio it/en e persistenza preferenza |
 | GET | /experts/{id} | pubblico, solo EA pubblicati |
 | GET | /experts/{id}/image | pubblico, immagine di EA pubblicato |
 | GET/POST | /register | guest, registrazione, password minimo 12 caratteri |
@@ -81,6 +87,8 @@ L'MVP usa endpoint web con sessione e CSRF, non una API pubblica bearer-token. P
 
 Le mutazioni restituiscono redirect ed errori validazione nella UI; accessi non autorizzati 403, risorse di altri utenti 404. I campi ruolo/stato non vengono accettati dai form pubblici. L'amministratore si crea solo da CLI.
 
+Per il servizio Windows sono presenti quattro endpoint autenticati `/api/v1/compiler`: claim, source, complete e fail. Il loro contratto e i requisiti di rete sono descritti in [EXTERNAL_SERVICES.md](EXTERNAL_SERVICES.md).
+
 ## Architettura UI
 
 Pagina **Scegli il broker** raggiungibile dal menu e dal profilo, con immagine, descrizione e link affiliato di ogni broker attivo. La console amministrativa collega la gestione delle schede, dell'ordine e della visibilità. La registrazione avviene sul sito esterno del broker; la verifica conto rimane separata e manuale. Dettagli in [BROKERS.md](BROKERS.md).
@@ -92,9 +100,9 @@ Layout condiviso con sidebar e intestazione adattive. Catalogo con ricerca, sche
 ```text
 app/Http/Controllers/ArchiveController.php  flussi web e autorizzazioni
 app/Http/Controllers/BrokerController.php   lista broker e CRUD amministrativo
-app/Jobs/CompileExpert.php                 job compilazione
+app/Jobs/CompileExpert.php                 handler innocuo per vecchi job
 app/Models/User.php                       identità e hashing
-config/archive.php                        broker e compilatore
+config/archive.php                        lingue, disco EA e protocollo compilatore
 database/migrations/                      schema e indici
 database/seeders/                          catalogo dimostrativo locale
 resources/views/                          layout e pagine Blade
@@ -104,21 +112,26 @@ routes/console.php                        bootstrap amministratore
 public/app.css                            UI responsive
 public/ea-template.mq5                     contratto sorgente
 public/web.config                         rewrite IIS
-storage/app/private/                      sorgenti, immagini, artefatti (mai pubblici)
+storage/app/private/                      immagini e file EA storici/locali (mai pubblici)
+lang/                                     traduzioni Laravel it/en
+services/windows-compiler/                 servizio esterno Python e template WinSW
+routes/api.php                            API token-based del servizio
+app/Console/Commands/CopyEaStorage.php     migrazione file verso storage privato
 tests/Feature/ArchiveTest.php              accesso, licenze e recensioni
 docs/                                     architettura e deployment
 ```
 
 ## Pipeline EA e limiti di sicurezza
 
-1. Sviluppatore carica MQ5 privato e metadati. Nessuna compilazione automatica prima della revisione.
-2. Admin scarica e revisiona il sorgente, controllando include, macro, DLL, altri eventi (timer, trade, chart), chiamate a trading fuori dai due entrypoint e ogni modo di alterare il wrapper. Pubblica solo sorgenti autonomi compatibili.
-3. Admin verifica proprietà del conto e collegamento al broker partner con riscontro esterno. Non basta un numero dichiarato dall'utente.
-4. Utente richiede build legata a conto e server. Job aggiunge `OnInit` e `OnTick` che verificano `ACCOUNT_LOGIN` e `ACCOUNT_SERVER`, invocando `EA_OnInit` e `EA_OnTick`.
-5. MetaEditor compila in directory casuale; artefatto accettato solo con file EX5 e log con zero errori. Cleanup in finally. Errori pubblici generici; log interni senza sorgenti.
-6. Download autorizzato lato server e privato, mai link pubblico al disco. Non distribuire MQ5.
+1. Lo sviluppatore carica il sorgente sul disco EA configurato, senza accesso pubblico; disco, percorso e SHA-256 vengono registrati.
+2. L'amministratore verifica manualmente sorgente, contratto EA_OnInit/EA_OnTick e conto del broker.
+3. L'utente richiede la compilazione. Laravel crea un record queued, senza eseguire MetaEditor.
+4. Il servizio Windows preleva un lavoro via HTTPS con token globale. Laravel assegna una lease di 600 secondi e un token per lavoro, conservandone solo l'hash.
+5. Il servizio scarica il sorgente, verifica il checksum quando disponibile, aggiunge il controllo di login e server ed esegue MetaEditor in directory temporanea. Timeout del processo 120 secondi. Nessun EX5 viene eseguito dal servizio.
+6. Il servizio invia EX5 e checksum. Laravel controlla lease, conto, stato EA, file e checksum, e salva il risultato sullo storage privato. Completamento ripetuto identico idempotente; vecchi token rifiutati.
+7. Il download resta autorizzato al proprietario. Sorgenti accessibili solo all'admin e al servizio per il lavoro assegnato.
 
-Il wrapper non è un sandbox, né una protezione assoluta contro reverse engineering o uno sviluppatore ostile. Prima di aprire upload a terzi servono worker Windows effimeri, account OS dedicato senza privilegi, rete bloccata salvo risorse necessarie, limiti CPU/disco/processi, scansione e revisione sorgenti. Il codice non crea automaticamente questo isolamento. Revocare il conto impedisce nuovi download, ma non revoca un EX5 già consegnato: per revoca a runtime serve un servizio licenze online e una gestione esplicita dei periodi offline.
+La revisione umana e l'isolamento Windows restano necessari. Il wrapper non è un sandbox e non garantisce protezione assoluta contro un autore ostile o reverse engineering. Un file già scaricato non viene revocato dal cambio di stato del conto sul sito. I dettagli del contratto, i limiti e il passaggio dalla vecchia versione sono in [EXTERNAL_SERVICES.md](EXTERNAL_SERVICES.md).
 
 ## Crescita
 

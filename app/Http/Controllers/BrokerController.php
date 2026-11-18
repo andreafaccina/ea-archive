@@ -73,7 +73,7 @@ class BrokerController extends Controller
             'description' => 'required|string|max:10000',
             'affiliate_url' => ['required', 'string', 'url:https', 'max:2048', function ($attribute, $value, $fail) {
                 if (parse_url($value, PHP_URL_USER) !== null || parse_url($value, PHP_URL_PASS) !== null) {
-                    $fail('Il link non deve contenere credenziali.');
+                    $fail(__('Il link non deve contenere credenziali.'));
                 }
             }],
             'image' => [$broker === null ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
@@ -112,7 +112,7 @@ class BrokerController extends Controller
             Storage::disk('local')->delete($oldImage);
         }
 
-        return redirect()->route('admin.brokers.index')->with('success', 'Broker salvato.');
+        return redirect()->route('admin.brokers.index')->with('success', __('Broker salvato.'));
     }
 
     public function destroy(Request $request, int $broker): RedirectResponse
@@ -127,7 +127,7 @@ class BrokerController extends Controller
         });
         Storage::disk('local')->delete($image);
 
-        return redirect()->route('admin.brokers.index')->with('success', 'Broker eliminato.');
+        return redirect()->route('admin.brokers.index')->with('success', __('Broker eliminato.'));
     }
 
     private function authorizeAdmin(Request $request): void
