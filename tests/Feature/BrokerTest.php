@@ -45,6 +45,101 @@ class BrokerTest extends TestCase
         return UploadedFile::fake()->createWithContent('logo.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg=='));
     }
 
+    public function test_admin_can_create_broker_with_external_image_instead_of_upload(): void
+    {
+        Storage::fake('local');
+
+        $response = $this->actingAs($this->adminUser())->post('/admin/brokers', $this->payload() + ['image_url' => 'https://images.example/logo.png?v=1&size=large']);
+
+        $response->assertRedirect('/admin/brokers');
+        $broker = DB::table('brokers')->first();
+        $this->assertDatabaseHas('brokers', ['id' => $broker->id, 'image_url' => 'https://images.example/logo.png?v=1&size=large', 'image_path' => null]);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'broker.created', 'subject' => 'brokers:'.$broker->id]);
+        $this->get('/brokers/'.$broker->id.'/image')->assertRedirect('https://images.example/logo.png?v=1&size=large')->assertHeader('Referrer-Policy', 'no-referrer');
+        $page = $this->get('/brokers')->assertOk()->assertSee('referrerpolicy="no-referrer"', false);
+        $this->assertStringContainsString("img-src 'self' data: https:", $page->headers->get('Content-Security-Policy'));
+    }
+
+    public function test_external_image_respects_hidden_broker_access(): void
+    {
+        $id = $this->broker(['image_url' => 'https://images.example/logo.png', 'image_path' => null, 'is_active' => false]);
+
+        $this->actingAs(User::factory()->create())->get('/brokers/'.$id.'/image')->assertNotFound();
+        $this->actingAs($this->adminUser())->get('/brokers/'.$id.'/image')->assertRedirect('https://images.example/logo.png');
+    }
+
+    public function test_switching_upload_to_url_removes_old_local_file(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('broker-images/original.png', 'original');
+        $id = $this->broker();
+
+        $this->actingAs($this->adminUser())->put('/admin/brokers/'.$id, $this->payload() + ['image_url' => 'https://images.example/logo.png'])->assertRedirect('/admin/brokers');
+
+        $this->assertDatabaseHas('brokers', ['id' => $id, 'image_path' => null, 'image_url' => 'https://images.example/logo.png']);
+        Storage::disk('local')->assertMissing('broker-images/original.png');
+    }
+
+    public function test_switching_url_to_upload_clears_remote_link(): void
+    {
+        Storage::fake('local');
+        $id = $this->broker(['image_url' => 'https://images.example/logo.png', 'image_path' => null]);
+
+        $this->actingAs($this->adminUser())->put('/admin/brokers/'.$id, $this->payload() + ['image' => $this->image()])->assertRedirect('/admin/brokers');
+
+        $record = DB::table('brokers')->find($id);
+        $this->assertNull($record->image_url);
+        Storage::disk('local')->assertExists($record->image_path);
+    }
+
+    public function test_blank_replacement_inputs_keep_current_external_image(): void
+    {
+        $id = $this->broker(['image_url' => 'https://images.example/logo.png', 'image_path' => null]);
+
+        $this->actingAs($this->adminUser())->put('/admin/brokers/'.$id, $this->payload() + ['image_url' => ''])->assertRedirect('/admin/brokers');
+
+        $this->assertDatabaseHas('brokers', ['id' => $id, 'image_url' => 'https://images.example/logo.png', 'image_path' => null]);
+    }
+
+    public function test_file_and_url_together_are_rejected_without_writes(): void
+    {
+        Storage::fake('local');
+
+        $this->actingAs($this->adminUser())->post('/admin/brokers', $this->payload() + ['image_url' => 'https://images.example/logo.png', 'image' => $this->image()])->assertSessionHasErrors('image_url');
+
+        $this->assertDatabaseCount('brokers', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+    }
+
+    public static function unsafeImageLinks(): array
+    {
+        return [['javascript:alert(1)'], ['http://images.example/logo.png'], ['https://user:password@images.example/logo.png'], ['data:image/png;base64,AAAA']];
+    }
+
+    #[DataProvider('unsafeImageLinks')]
+    public function test_invalid_external_image_url_is_rejected(string $url): void
+    {
+        $id = $this->broker();
+
+        $this->actingAs($this->adminUser())->put('/admin/brokers/'.$id, $this->payload() + ['image_url' => $url])->assertSessionHasErrors('image_url');
+
+        $this->assertDatabaseHas('brokers', ['id' => $id, 'image_path' => 'broker-images/original.png', 'image_url' => null]);
+        $this->assertDatabaseCount('audit_logs', 0);
+    }
+
+    public function test_url_only_broker_can_be_deleted_without_local_file(): void
+    {
+        Storage::fake('local');
+        $id = $this->broker(['image_url' => 'https://images.example/logo.png', 'image_path' => null]);
+
+        $this->actingAs($this->adminUser())->delete('/admin/brokers/'.$id)->assertRedirect('/admin/brokers');
+
+        $this->assertDatabaseMissing('brokers', ['id' => $id]);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'broker.deleted', 'subject' => 'brokers:'.$id]);
+    }
+
     public function test_guests_must_sign_in_to_view_brokers_and_manage_them(): void
     {
         $this->get('/brokers')->assertRedirect('/login');

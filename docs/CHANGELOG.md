@@ -4,6 +4,15 @@ Ultimo aggiornamento: 18 novembre 2026.
 
 Questo registro riguarda l'applicazione EA Archive. Il CHANGELOG.md nella root proviene dallo scheletro Laravel e non è il registro dello sviluppo dell'applicazione.
 
+## 18 novembre 2026 - Immagine broker tramite link online
+
+- Aggiunto campo URL immagine HTTPS nella gestione broker, alternativo al caricamento da file, con testi italiano/inglese.
+- Nuova migrazione con image_url nullable e image_path nullable; mantenuti i file esistenti. Campi immagine entrambi vuoti in modifica conservano la sorgente attuale.
+- Immagini remote caricate dal browser tramite redirect dopo controllo accessi; nessuna richiesta o importazione lato server. Aggiornati CSP e referrer policy per il caricamento HTTPS.
+- Gestiti passaggio file/URL, rimozione del file sostituito ed eliminazione di schede con solo URL. Validati schema HTTPS, assenza di credenziali e scelta di una sola sorgente.
+- Verifiche: 59 test Laravel superati con 303 asserzioni, migrazione locale applicata, viste compilate e Pint. Documentazione aggiornata.
+- Nessun URL esterno reale collaudato, nessuna verifica visiva e nessuna pubblicazione di queste modifiche.
+
 ## 18 novembre 2026 - Nessun file EA pregresso da recuperare
 
 - Ricevuta conferma dell'utente: non sono presenti sorgenti o compilati locali pregressi da trasferire.

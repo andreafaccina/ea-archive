@@ -235,5 +235,9 @@
   "Showing": "Mostrati",
   "to": "a",
   "of": "di",
-  "results": "risultati"
+  "results": "risultati",
+  "Oppure link immagine · HTTPS": "Oppure link immagine · HTTPS",
+  "Inserisci il link diretto a un’immagine pubblica oppure carica un file.": "Inserisci il link diretto a un’immagine pubblica oppure carica un file.",
+  "Lascia entrambi i campi vuoti per mantenere l’immagine attuale.": "Lascia entrambi i campi vuoti per mantenere l’immagine attuale.",
+  "Scegli un file oppure un link immagine, non entrambi.": "Scegli un file oppure un link immagine, non entrambi."
 }

@@ -20,6 +20,8 @@ Le verifiche riportate sotto riguardano lo sviluppo locale: la pubblicazione non
 
 ## Verifiche effettuate
 
+Immagini broker via URL: aggiunta alternativa al caricamento, con link HTTPS, conservazione dell'immagine quando i campi restano vuoti e passaggio tra file e URL. Migrazione applicata localmente e viste compilate. Suite aggiornata: 59 test superati, 303 asserzioni. Nessun test su URL reali, verifica visiva o rilascio pubblico di questa modifica. Vedi [BROKERS.md](BROKERS.md).
+
 Miglioramenti del 18 novembre: 48 test Laravel superati con 252 asserzioni e 5 test Python superati. Inclusi selettore lingua, persistenza, rendering inglese, API compilatore, token/lease, checksum, download da disco esterno simulato, copia storage e invocazione MetaEditor simulata. Migrazione applicata solo localmente, viste compilate e Pint verificato; audit Composer senza avvisi. Non sono test di integrazione con S3/MetaEditor/MySQL reali.
 
 Dopo l'aggiunta della gestione broker: 30 test superati con 140 asserzioni, inclusi 17 test dedicati ai broker. Migrazione applicata localmente, viste Blade compilate, otto nuove route elencate e Composer audit senza avvisi. Verifica visiva in browser non effettuata.

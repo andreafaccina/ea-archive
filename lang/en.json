@@ -235,5 +235,9 @@
   "Showing": "Showing",
   "to": "to",
   "of": "of",
-  "results": "results"
+  "results": "results",
+  "Oppure link immagine · HTTPS": "Or image link · HTTPS",
+  "Inserisci il link diretto a un’immagine pubblica oppure carica un file.": "Enter the direct link to a public image or upload a file.",
+  "Lascia entrambi i campi vuoti per mantenere l’immagine attuale.": "Leave both fields empty to keep the current image.",
+  "Scegli un file oppure un link immagine, non entrambi.": "Choose either a file or an image link, not both."
 }

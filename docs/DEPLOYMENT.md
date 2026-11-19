@@ -53,6 +53,8 @@ Il comando richiede che l'utente esista già. Non registra password in shell.
 
 ## Localizzazione
 
+L'opzione immagine broker tramite URL richiede la migrazione `2026_11_18_175806_add_image_url_to_brokers_table`. L'URL viene salvato dall'admin e l'immagine viene caricata dal browser; nessuna configurazione di bucket o importazione lato server necessaria per questa opzione. Vedi [BROKERS.md](BROKERS.md).
+
 Configurare `APP_LOCALE=it` e `APP_FALLBACK_LOCALE=en`; il selettore supporta italiano e inglese. Le preferenze utente richiedono la nuova migrazione. Vedi [LOCALIZATION.md](LOCALIZATION.md).
 
 ## Verifiche

@@ -38,7 +38,7 @@ La migrazione del 18 novembre aggiunge a experts disco/checksum sorgente e a bui
 | Tabella | Contenuto e vincoli |
 |---|---|
 | users | nome, email univoca, password hash, ruolo user/developer/admin, locale nullable it/en |
-| brokers | nome, descrizione, URL affiliato HTTPS, immagine privata, stato attivo e ordine; indice is_active+sort_order+id |
+| brokers | nome, descrizione, URL affiliato HTTPS, immagine caricata privata oppure image_url HTTPS esterno, stato attivo e ordine; indice is_active+sort_order+id |
 | broker_accounts | utente FK, login come stringa, server, stato pending/verified/rejected, verificatore FK; unico login+server |
 | experts | autore FK, metadati strategia, versione, rischio dichiarato, percorsi privati sorgente/immagine; stato pending/published/rejected |
 | builds | utente+EA+conto FK, queued/compiling/ready/failed, artefatto privato, errore generico, downloaded_at |

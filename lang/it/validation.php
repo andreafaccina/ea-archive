@@ -2,6 +2,7 @@
 
 return [
     'accepted' => 'Il campo :attribute deve essere accettato.',
+    'required_without' => 'Il campo :attribute è obbligatorio quando :values non è presente.',
     'required' => 'Il campo :attribute è obbligatorio.',
     'string' => 'Il campo :attribute deve essere una stringa.',
     'email' => 'Il campo :attribute deve contenere un indirizzo email valido.',

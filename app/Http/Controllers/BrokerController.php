@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BrokerController extends Controller
@@ -18,14 +19,17 @@ class BrokerController extends Controller
         return view('brokers.index', compact('brokers'));
     }
 
-    public function image(Request $request, int $broker): StreamedResponse
+    public function image(Request $request, int $broker): StreamedResponse|RedirectResponse
     {
         $query = DB::table('brokers')->where('id', $broker);
         if ($request->user()->role !== 'admin') {
             $query->where('is_active', true);
         }
         $record = $query->firstOrFail();
-        abort_unless(Storage::disk('local')->exists($record->image_path), 404);
+        if ($record->image_url) {
+            return redirect()->away($record->image_url)->withHeaders(['Referrer-Policy' => 'no-referrer']);
+        }
+        abort_unless($record->image_path && Storage::disk('local')->exists($record->image_path), 404);
 
         return Storage::disk('local')->response($record->image_path);
     }
@@ -76,21 +80,33 @@ class BrokerController extends Controller
                     $fail(__('Il link non deve contenere credenziali.'));
                 }
             }],
-            'image' => [$broker === null ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image' => [$broker === null ? 'required_without:image_url' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image_url' => [$broker === null ? 'required_without:image' : 'nullable', 'nullable', 'string', 'url:https', 'max:2048', function ($attribute, $value, $fail) {
+                if (parse_url($value, PHP_URL_USER) !== null || parse_url($value, PHP_URL_PASS) !== null) {
+                    $fail(__('Il link non deve contenere credenziali.'));
+                }
+            }],
             'is_active' => 'required|boolean',
             'sort_order' => 'required|integer|min:0|max:1000000',
         ]);
-        unset($data['image']);
+        if ($request->hasFile('image') && $request->filled('image_url')) {
+            throw ValidationException::withMessages(['image_url' => __('Scegli un file oppure un link immagine, non entrambi.')]);
+        }
+        $remoteUrl = $data['image_url'] ?? null;
+        unset($data['image'], $data['image_url']);
         $newImage = $request->file('image')?->store('broker-images', 'local');
+        abort_if($newImage === false, 503);
+        $replaceImage = $newImage !== null || $remoteUrl !== null;
         $oldImage = null;
         try {
-            DB::transaction(function () use ($request, $broker, $data, $newImage, &$oldImage) {
+            DB::transaction(function () use ($request, $broker, $data, $newImage, $remoteUrl, $replaceImage, &$oldImage) {
                 if ($broker !== null) {
                     $existing = DB::table('brokers')->where('id', $broker)->lockForUpdate()->firstOrFail();
                     $oldImage = $existing->image_path;
                 }
-                if ($newImage !== null) {
+                if ($replaceImage) {
                     $data['image_path'] = $newImage;
+                    $data['image_url'] = $remoteUrl;
                 }
                 $data['updated_at'] = now();
                 if ($broker === null) {
@@ -108,7 +124,7 @@ class BrokerController extends Controller
             }
             throw $exception;
         }
-        if ($newImage !== null && $oldImage !== null) {
+        if ($replaceImage && $oldImage !== null) {
             Storage::disk('local')->delete($oldImage);
         }
 
@@ -125,7 +141,9 @@ class BrokerController extends Controller
 
             return $record->image_path;
         });
-        Storage::disk('local')->delete($image);
+        if ($image !== null) {
+            Storage::disk('local')->delete($image);
+        }
 
         return redirect()->route('admin.brokers.index')->with('success', __('Broker eliminato.'));
     }

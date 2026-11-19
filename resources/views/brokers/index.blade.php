@@ -9,7 +9,7 @@
 <div class="cards">
     @forelse($brokers as $broker)
         <article class="card broker-card">
-            <div class="broker-image"><img src="{{ route('brokers.image', $broker->id) }}" alt="{{ $broker->name }}" loading="lazy"></div>
+            <div class="broker-image"><img src="{{ route('brokers.image', $broker->id) }}" referrerpolicy="no-referrer" alt="{{ $broker->name }}" loading="lazy"></div>
             <div class="card-body">
                 <h2>{{ $broker->name }}</h2>
                 <p class="description broker-description">{{ $broker->description }}</p>
